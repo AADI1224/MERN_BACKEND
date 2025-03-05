@@ -77,7 +77,6 @@ router.post('/login', async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
-
         // console.log("Password match:", isMatch);
 
         // Generate a JWT token including user's first name

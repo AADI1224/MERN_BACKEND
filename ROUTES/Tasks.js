@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
 // Middleware to authenticate the user
 const authenticateUser = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    // console.log("token in API", token);
+    //console.log("token in API", token);
     if (!token) {
         return res.status(401).json({ message: 'Access denied, token missing.' });
     }
@@ -54,9 +54,10 @@ router.post("/posttasks", authenticateUser, async (req, res) => {
         }
 
         // Default reminder time (1 hour before deadline if not provided)
-        const reminderDate = reminderTime
-            ? new Date(reminderTime)
-            : new Date(deadlineDate.getTime() - 60 * 60 * 1000);
+        let reminderDate = reminderTime ? new Date(reminderTime) : new Date(deadlineDate.getTime() - 60 * 60 * 1000);
+        if (isNaN(reminderDate)) {
+            return res.status(400).json({ message: "Invalid reminderTime format." });
+        }
 
         const newTask = new Task({
             userId: req.user.userId,
@@ -115,8 +116,8 @@ router.get('/gettasks', authenticateUser, async (req, res) => {
         const tasks = await Task.find({ userId: req.user.userId })
             .sort({ createdAt: -1 })  //Sort by latest first
             .skip(skip)
-            .limit(limit)
-            .select('title description createdAt updatedAt');
+            .limit(limit);
+            // .select('title description createdAt updatedAt reminderTime deadline');
 
         const totalTasks = await Task.countDocuments({ userId: req.user.userId });
 
@@ -127,7 +128,6 @@ router.get('/gettasks', authenticateUser, async (req, res) => {
         res.status(200).json({
             tasks,
             totalTasks,
-            // totalPages: Math.ceil(totalTasks / limit),
             totalPages,
             currentPage: page,
         });
@@ -141,6 +141,8 @@ router.get('/gettasks', authenticateUser, async (req, res) => {
 // Update a task's title and description 
 router.put('/puttasks/:id', authenticateUser, async (req, res) => {
     try {
+        console.log("req.params", req.params);
+        console.log("req.body", req.body);
         const task = await Task.findById(req.params.id);
         if (!task) {
             return res.status(404).json({ message: 'Task not found' });
@@ -149,6 +151,8 @@ router.put('/puttasks/:id', authenticateUser, async (req, res) => {
         // Update the task with new data
         task.title = req.body.title;
         task.description = req.body.description;
+        task.deadline = new Date(req.body.deadline);
+        task.reminderTime = new Date(req.body.reminderTime);
 
         // Save the updated task (Mongoose will handle updating the `updatedAt` field)
         await task.save();
@@ -157,6 +161,8 @@ router.put('/puttasks/:id', authenticateUser, async (req, res) => {
         const taskWithIST = task.toObject(); // Convert mongoose document to plain object
         taskWithIST.createdAt = moment.tz(task.createdAt, 'Asia/Kolkata').format(); // Format the createdAt field to IST
         taskWithIST.updatedAt = moment.tz(task.updatedAt, 'Asia/Kolkata').format(); // Format the updatedAt field to IST
+        taskWithIST.deadline = moment.tz(task.deadline, 'Asia/Kolkata').format(); // Format the updatedAt field to IST
+        taskWithIST.reminderTime = moment.tz(task.reminderTime, 'Asia/Kolkata').format(); // Format the updatedAt field to IST
 
         res.json(taskWithIST); // Send the updated task back with formatted timestamps
     } catch (error) {
