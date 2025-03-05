@@ -40,7 +40,7 @@ const authenticateUser = (req, res, next) => {
 
 router.post("/posttasks", authenticateUser, async (req, res) => {
     // console.log("posttask API hit backend");
-    const { title, description, deadline, reminderTime } = req.body;
+    const { title, description, deadline, reminderTime, isCompleted } = req.body;
 
     if (!title || !deadline) {
         return res.status(400).json({ message: "Title and deadline are required." });
@@ -53,7 +53,9 @@ router.post("/posttasks", authenticateUser, async (req, res) => {
             return res.status(400).json({ message: "Invalid deadline format." });
         }
 
-        // Default reminder time (1 hour before deadline if not provided)
+        const isComplete = Boolean(isCompleted); 
+        console.log("isComplete", isComplete);
+
         let reminderDate = reminderTime ? new Date(reminderTime) : new Date(deadlineDate.getTime() - 60 * 60 * 1000);
         if (isNaN(reminderDate)) {
             return res.status(400).json({ message: "Invalid reminderTime format." });
@@ -66,6 +68,7 @@ router.post("/posttasks", authenticateUser, async (req, res) => {
             deadline: deadlineDate,
             reminderTime: reminderDate,
             reminderSent: false,
+            isCompleted: isComplete,
         });
 
         const savedTask = await newTask.save();
@@ -117,11 +120,13 @@ router.get('/gettasks', authenticateUser, async (req, res) => {
             .sort({ createdAt: -1 })  //Sort by latest first
             .skip(skip)
             .limit(limit);
-            // .select('title description createdAt updatedAt reminderTime deadline');
+        // .select('title description createdAt updatedAt reminderTime deadline');
 
         const totalTasks = await Task.countDocuments({ userId: req.user.userId });
 
         console.log("totalTasks", totalTasks);
+        console.log("isCompleted?", tasks);
+        console.log("isCompleted?", tasks[0].isCompleted);
 
         const totalPages = Math.max(1, Math.ceil(totalTasks / limit));
         // console.log("totalPages", totalPages);
@@ -130,6 +135,7 @@ router.get('/gettasks', authenticateUser, async (req, res) => {
             totalTasks,
             totalPages,
             currentPage: page,
+            isCompleted: tasks[0].isCompleted,
         });
 
     } catch (error) {
@@ -148,11 +154,15 @@ router.put('/puttasks/:id', authenticateUser, async (req, res) => {
             return res.status(404).json({ message: 'Task not found' });
         }
 
+        const isComplete = Boolean(req.body.isCompleted); 
+        console.log("isComplete", req.body.isComplete);
+
         // Update the task with new data
         task.title = req.body.title;
         task.description = req.body.description;
         task.deadline = new Date(req.body.deadline);
         task.reminderTime = new Date(req.body.reminderTime);
+        task.isCompleted = isComplete;
 
         // Save the updated task (Mongoose will handle updating the `updatedAt` field)
         await task.save();

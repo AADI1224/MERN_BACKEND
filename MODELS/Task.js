@@ -26,6 +26,10 @@ const taskSchema = new mongoose.Schema(
       type: Boolean,
       default: false, // Initially, no reminder has been sent
     },
+    isCompleted: {
+      type: Boolean,
+      default: false, // Initially, task is not completed
+    }
   },
   { timestamps: true }
 );
