@@ -47,13 +47,12 @@ router.post("/posttasks", authenticateUser, async (req, res) => {
     }
 
     try {
-        // Convert deadline to Date object
         const deadlineDate = new Date(deadline);
         if (isNaN(deadlineDate)) {
             return res.status(400).json({ message: "Invalid deadline format." });
         }
 
-        const isComplete = Boolean(isCompleted); 
+        const isComplete = Boolean(isCompleted);
         console.log("isComplete", isComplete);
 
         let reminderDate = reminderTime ? new Date(reminderTime) : new Date(deadlineDate.getTime() - 60 * 60 * 1000);
@@ -120,7 +119,6 @@ router.get('/gettasks', authenticateUser, async (req, res) => {
             .sort({ createdAt: -1 })  //Sort by latest first
             .skip(skip)
             .limit(limit);
-        // .select('title description createdAt updatedAt reminderTime deadline');
 
         const totalTasks = await Task.countDocuments({ userId: req.user.userId });
 
@@ -154,17 +152,15 @@ router.put('/puttasks/:id', authenticateUser, async (req, res) => {
             return res.status(404).json({ message: 'Task not found' });
         }
 
-        const isComplete = Boolean(req.body.isCompleted); 
+        const isComplete = Boolean(req.body.isCompleted);
         console.log("isComplete", req.body.isComplete);
 
-        // Update the task with new data
         task.title = req.body.title;
         task.description = req.body.description;
         task.deadline = new Date(req.body.deadline);
         task.reminderTime = new Date(req.body.reminderTime);
         task.isCompleted = isComplete;
 
-        // Save the updated task (Mongoose will handle updating the `updatedAt` field)
         await task.save();
 
         // Convert the timestamps to IST
