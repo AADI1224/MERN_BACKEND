@@ -13,7 +13,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors({origin:'*'}));
 
 // mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/mern-task-app')
-mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://aadityachouhan787898:ulGhxzyYPy0ZUp5n@cluster0.qfvct.mongodb.net/')
+mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://aadityachouhan787898:aadi.kita_b@cluster0.qfvct.mongodb.net/')
   .then(() => console.log("MongoDB connected successfully"))
   .catch((err) => {
     console.error("Error connecting to MongoDB:", err);
